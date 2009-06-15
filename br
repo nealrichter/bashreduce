@@ -76,7 +76,7 @@ if [ -z "$hosts" ]; then
 fi
 
 # if we have a reduce, add the pipe explicitly
-[ -n "$reduce" ] && reduce="| $reduce 2>/dev/null"
+[ -n "$reduce" ] && reduce="| $reduce 2>>/tmp/br_stderr"
 
 # okay let's get started!	first we need a name for our job
 jobid="$(uuidgen)"
@@ -96,8 +96,8 @@ for host in $hosts; do
 	mkfifo $jobpath/{in,out}/$host_idx
 	# lets get the pid of our listener
 	ssh -n $host "mkdir -p $nodepath"
-	pid=$(ssh -n $host "nc -l -p $port_out >$nodepath/in_$host_idx 2>/dev/null </dev/null & jobs -l" | awk {'print $2'})
-	ssh -n $host "tail -s0.1 -f --pid=$pid $nodepath/in_$host_idx 2>/dev/null </dev/null | LC_ALL='$LC_ALL' sort -S$sort_mem -T$tmp -k$column,$column 2>/dev/null $reduce | nc -q0 -l -p $port_in >/dev/null &"
+	pid=$(ssh -n $host "nc -l -p $port_out >$nodepath/in_$host_idx 2>>/tmp/br_stderr </dev/null & jobs -l" | awk {'print $2'})
+	ssh -n $host "tail -s0.1 -f --pid=$pid $nodepath/in_$host_idx 2>>/tmp/br_stderr </dev/null | LC_ALL='$LC_ALL' sort -S$sort_mem -T$tmp -k$column,$column 2>>/tmp/br_stderr $reduce | nc -q0 -l -p $port_in >>/tmp/br_stderr &"
 	# our local forwarders
 	nc $host $port_in >$jobpath/in/$host_idx &
 	nc -q0 $host $port_out <$jobpath/out/$host_idx &
@@ -109,9 +109,9 @@ for host in $hosts; do
 done
 
 # okay, time to map
-if which brp >/dev/null; then
+if which brp >>/tmp/br_stderr; then
 	BRP=brp
-elif [ -f brutils/brp >/dev/null ]; then
+elif [ -f brutils/brp >>/tmp/br_stderr ]; then
 	BRP=brutils/brp
 fi
 if [ -n "$BRP" ]; then
@@ -132,9 +132,9 @@ else
 fi
 
 # save it somewhere
-if which brm >/dev/null; then
+if which brm >>/tmp/br_stderr; then
 	BRM=brm
-elif [ -f brutils/brm >/dev/null ]; then
+elif [ -f brutils/brm >>/tmp/br_stderr ]; then
 	BRP=brutils/brm
 fi
 if [ -n "$BRM" ]; then
