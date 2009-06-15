@@ -110,7 +110,12 @@ done
 
 # okay, time to map
 if which brp >/dev/null; then
-  eval "${input:+pv $input |} brp - $(($mapcolumn - 1)) $out_files"
+	BRP=brp
+elif [ -f brutils/brp >/dev/null ]; then
+	BRP=brutils/brp
+fi
+if [ -n "$BRP" ]; then
+	eval "${input:+pv $input |} $BRP - $(($column - 1)) $out_files"
 else
   # use awk if we don't have brp
   # we're taking advantage of a special property that awk leaves its file handles open until its done
@@ -128,7 +133,12 @@ fi
 
 # save it somewhere
 if which brm >/dev/null; then
-  eval "brm - $(($mapcolumn - 1)) `find $jobpath/in/ -type p | xargs` ${output:+| pv >$output}"
+	BRM=brm
+elif [ -f brutils/brm >/dev/null ]; then
+	BRP=brutils/brm
+fi
+if [ -n "$BRM" ]; then
+	eval "$BRM- $(($column - 1)) `find $jobpath/in/ -type p | xargs` ${output:+| pv >$output}"
 else
   # use sort -m if we don't have brm
   # sort -m creates tmp files if too many input files are specified
