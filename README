@@ -1,0 +1,86 @@
+NAME
+	br - bashreduce, map/reduce in bash
+
+SYNOPSIS
+	br --hosts|-h '<host>[ <host>][...]' [--column|-c <column>]
+		[--map|-m <map>] [--reduce|-r <reduce>] [--mirror|-M]
+		[--input|-i <input>] [--output <output>]
+		[--tmp <tmp>] [-S <sort-mem-MB>] [--help]
+
+DESCRIPTION
+	br implements a map/reduce framework that allows the map and reduce
+	jobs to be constructed from standard Unix tools.  It can operate on
+	data piped into it or on files known to exist on the worker nodes.
+
+INSTALLATION
+	br can run out-of-the box but for convenience, put it somewhere on
+	your PATH.  The brutils come with a Makefile that will install
+	these tools, probably to /usr/local/bin.  If you leave these tools
+	in place relative to br, they'll be picked up and used from there.
+
+	You'll need passwordless ssh access to each machine you wish to
+	use as a worker (even localhost, for now).
+
+OPTIONS
+	--hosts, -h
+		The list of hosts to be used, specified as a space-
+		delimited list.  Specifying the same host multiple
+		times is allowed and is useful for taking explicit
+		advantage of multiple cores.
+
+	--column, -c
+
+	--map, -m
+		The map program, which should expect data on stdin
+		and produce the intermediate data on stdout.  The
+		stderr from this program will be logged.
+
+	--reduce, -r
+		The reduce program, which should expect data on stdin
+		and produce the intermediate data on stdout.  The
+		stderr from this program will be logged.
+
+	--mirror, -M
+		Only pass filenames from the master to the workers,
+		under the assumption that they all have a mirror of
+		the data set.
+
+	--input, -i
+		A file or directory to serve as input.  If it is a
+		file, this is equivalent to piping that file into
+		br.  If it is a directory, it is equivalent to
+		piping the names of every file in that directory
+		into br.
+
+	--output, -o
+		The local file where output will be stored.
+		Defaults to stdout.
+
+	--tmp, -t
+		The temporary directory for storing br files.  All of
+		these files will be prefixed with "br_" and will be
+		cleaned up upon successful exit.
+
+	-S
+		This is directly the -S option from sort(1).  It defaults
+		to 256M.
+
+	--help
+		Shows a help message and details about the arguments.
+
+VERSIONS
+	0.2
+
+DATE
+	2009-06-15
+
+AUTHORS
+	Erik Frey <erik@fawx.com>
+	Richard Crowley <r@rcrowley.org>
+
+SEE ALSO
+	<http://github.com/erikfrey/bashreduce>
+	<http://github.com/rcrowley/bashreduce>
+
+LICENSE
+	The goodwill of Erik Frey.
