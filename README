@@ -2,11 +2,9 @@ NAME
 	br - bashreduce, map/reduce in bash
 
 SYNOPSIS
-	br [-h|--hosts '<host>[ <host>][...]'] [-f|--filenames]
-		[-m|--map <map>] [-r|--reduce <reduce>]
-		[-i|--input <input>] [-o|--output <output>]
-		[-c|--column <column>] [-S <sort-mem-MB>]
-		[-t|--tmp <tmp>] [--help]
+	br [-h '<host>[ <host>][...]'] [-f] [-m <map>] [-r <reduce>]
+		[-i <input>] [-o <output>] [-c <column>] [-S <sort-mem-MB>]
+		[-t <tmp>] [-?]
 
 DESCRIPTION
 	br implements a map/reduce framework that allows the map and reduce
@@ -23,40 +21,40 @@ INSTALLATION
 	use as a worker (even localhost, for now).
 
 OPTIONS
-	-h, --hosts
+	-h
 		The list of hosts to be used, specified as a space-
 		delimited list.  Specifying the same host multiple
 		times is allowed and is useful for taking explicit
 		advantage of multiple cores.
 
-	-f, --filenames
+	-f
 		Only pass filenames from the master to the workers,
 		under the assumption that they all have a mirror of
 		the data set.  This is equivalent to prefixing your
 		map program with "xargs cat |".
 
-	-m, --map
+	-m
 		The map program, which should expect initial data on
 		stdin and produce the intermediate data on stdout.
 		The stderr from this program will be logged.
 
-	-r, --reduce
+	-r
 		The reduce program, which should expect intermediate
 		data on stdin and produce the final data on stdout.
 		The stderr from this program will be logged.
 
-	-i, --input
+	-i
 		A file or directory to serve as input.  If it is a
 		file, this is equivalent to piping that file into
 		br.  If it is a directory, it is equivalent to
 		piping the names of every file in that directory
 		into br.
 
-	-o, --output
+	-o
 		The local file where output will be stored.
 		Defaults to stdout.
 
-	-c, --column
+	-c
 		The column used by sort to produce the final output.
 		Defaults to 1.
 
@@ -64,13 +62,13 @@ OPTIONS
 		This is directly the -S option from sort(1).  It defaults
 		to 256M.
 
-	-t, --tmp
+	-t
 		The temporary directory for storing br files.  All of
 		these files will be prefixed with "br_" and, with the
 		exception of br_stderr, will be cleaned up upon
 		successful exit.  Defaults to /tmp.
 
-	--help
+	-?
 		Shows a help message and details about the arguments.
 
 FILES

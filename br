@@ -3,26 +3,24 @@
 # erik@fawx.com
 
 usage() {
-	echo "Usage: $1 [-h|--hosts '<host>[ <host>][...]']" \
-		"[-f|--filenames]" >&2
-	echo "       [-m|--map <map>] [-r|--reduce <reduce>]" >&2
-	echo "       [-i|--input <input>] [-o|--output <output>]" >&2
-	echo "       [-c|--column <column>] [-S <sort-mem-MB>]" >&2
-	echo "       [-t|--tmp <tmp>] [--help]" >&2
+	echo "Usage: $1 [-h '<host>[ <host>][...]'] [-f] [-m <map>]" \
+		"[-r <reduce>]" >&2
+	echo "       [-i <input>] [-o <output>] [-c <column>]" \
+		"[-S <sort-mem-MB>]" >&2
+	echo "       [-t <tmp>] [-?]" >&2
 	if [ -n "$2" ] ; then
-		echo "  --hosts     hosts to use; repeat hosts for multiple cores" >&2
-		echo "              (defaults to contents of /etc/br.hosts)" >&2
-		echo "  --filenames send filenames, not data, over the network," >&2
-		echo "              implies each host has a mirror of the dataset" >&2
-		echo "  --map       map program (effectively defaults to cat)" >&2
-		echo "  --reduce    reduce program" >&2
-		echo "  --mirror    assume the input data is mirrored on each node" >&2
-		echo "  --input     input file or directory (defaults to stdin)" >&2
-		echo "  --output    output file (defaults to stdout)" >&2
-		echo "  --column    column used by sort (defaults to 1)" >&2
-		echo "  -S          memory to use for sort (defaults to 256M)" >&2
-		echo "  --tmp       tmp directory (defaults to /tmp)" >&2
-		echo "  --help      this help message" >&2
+		echo "  -h hosts to use; repeat hosts for multiple cores" >&2
+		echo "     (defaults to contents of /etc/br.hosts)" >&2
+		echo "  -f send filenames, not data, over the network," >&2
+		echo "     implies each host has a mirror of the dataset" >&2
+		echo "  -m map program (effectively defaults to cat)" >&2
+		echo "  -r reduce program" >&2
+		echo "  -i input file or directory (defaults to stdin)" >&2
+		echo "  -o output file (defaults to stdout)" >&2
+		echo "  -c column used by sort (defaults to 1)" >&2
+		echo "  -S memory to use for sort (defaults to 256M)" >&2
+		echo "  -t tmp directory (defaults to /tmp)" >&2
+		echo "  -? this help message" >&2
 	fi
 	exit 2
 }
@@ -40,34 +38,21 @@ tmp=/tmp
 
 # TODO: Allow -tstuff and --thing=stuff syntax, too
 program=$(basename $0)
-set -- $(getopt --unquoted --name $program --options "h:fm:r:i:o:c:S:t:" \
-	--longoptions \
-	"hosts:,filenames,map:,reduce:,input:,output:,column:,tmp:,help" \
-	-- "$@") \
-	|| usage $program
-[[ $# -eq 0 ]] && usage $program
-last=
-while [[ $# -gt 0 ]] ; do
-	case "$1" in
-		-h|--hosts) last=h; hosts=$2; shift 2;;
-		-f|--filenames) last=f; filenames=true; shift;;
-		-m|--map) last=m; map=$2; shift 2;;
-		-r|--reduce) last=r; reduce=$2; shift 2;;
-		-i|--input) last=i; input=$2; shift 2;;
-		-o|--output) last=o; output=$2; shift 2;;
-		-c|--column) last=c; column=$2; shift 2;;
-		-S) last=S; sort_mem=$2; shift 2;;
-		-t|--tmp) last=t; tmp=$2; shift 2;;
-		--help) usage $program MOAR;;
-		--) unset last; shift;;
-		*)
-			if [[ "$last" == h ]]; then hosts="$hosts $1"; shift;
-			elif [[ "$last" == m ]]; then map="$map $1"; shift;
-			elif [[ "$last" == r ]]; then reduce="$reduce $1"; shift;
-			else usage $program; fi;;
+while getopts "h:fm:r:i:o:c:S:t:?" name; do
+	case "$name" in
+		h) hosts=$OPTARG;;
+		f) filenames=true;;
+		m) map=$OPTARG;;
+		r) reduce=$OPTARG;;
+		i) input=$OPTARG;;
+		o) output=$OPTARG;;
+		c) column=$OPTARG;;
+		S) sort_mem=$OPTARG;;
+		t) tmp=$OPTARG;;
+		?) usage $program MOAR;;
+		*) usage $program;;
 	esac
 done 
-unset last
 
 # If --hosts wasn't given, try /etc/br.hosts
 if [[ -z "$hosts" ]]; then
