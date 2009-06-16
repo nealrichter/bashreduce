@@ -3,8 +3,8 @@
 # erik@fawx.com
 
 usage() {
-	echo "Usage: $1 [-h '<host>[ <host>][...]'] [-f] [-m <map>]" \
-		"[-r <reduce>]" >&2
+	echo "Usage: $1 [-h '<host>[ <host>][...]'] [-f]" >&2
+	echo "       [-m <map>] [-r <reduce>] [-M <merge>]" >&2
 	echo "       [-i <input>] [-o <output>] [-c <column>]" \
 		"[-S <sort-mem-MB>]" >&2
 	echo "       [-t <tmp>] [-?]" >&2
@@ -15,6 +15,7 @@ usage() {
 		echo "     implies each host has a mirror of the dataset" >&2
 		echo "  -m map program (effectively defaults to cat)" >&2
 		echo "  -r reduce program" >&2
+		echo "  -M merge program" >&2
 		echo "  -i input file or directory (defaults to stdin)" >&2
 		echo "  -o output file (defaults to stdout)" >&2
 		echo "  -c column used by sort (defaults to 1)" >&2
@@ -30,20 +31,21 @@ hosts=
 filenames=false
 map=
 reduce=
+merge=
 input=
 output=
 column=1
 sort_mem=256M
 tmp=/tmp
 
-# TODO: Allow -tstuff and --thing=stuff syntax, too
 program=$(basename $0)
-while getopts "h:fm:r:i:o:c:S:t:?" name; do
+while getopts "h:fm:r:M:i:o:c:S:t:?" name; do
 	case "$name" in
 		h) hosts=$OPTARG;;
 		f) filenames=true;;
 		m) map=$OPTARG;;
 		r) reduce=$OPTARG;;
+		M) merge=$OPTARG;;
 		i) input=$OPTARG;;
 		o) output=$OPTARG;;
 		c) column=$OPTARG;;
@@ -54,12 +56,12 @@ while getopts "h:fm:r:i:o:c:S:t:?" name; do
 	esac
 done 
 
-# If --hosts wasn't given, try /etc/br.hosts
+# If -h wasn't given, try /etc/br.hosts
 if [[ -z "$hosts" ]]; then
 	if [[ -e /etc/br.hosts ]]; then
 		hosts=$(cat /etc/br.hosts)
 	else
-		echo "$program: must specify --hosts or provide /etc/br.hosts"
+		echo "$program: must specify -h or provide /etc/br.hosts"
 		usage $program
 	fi
 fi
