@@ -12,7 +12,7 @@ usage() {
 		echo "  --hosts  hosts to use; can repeat hosts for multiple cores" >&2
 		echo "           (defaults to contents of /etc/br.hosts)" >&2
 		echo "  --column column to use during partitioning (defaults to 1)" >&2
-		echo "  --map    map program (defaults to cat)" >&2
+		echo "  --map    map program (effectively defaults to cat)" >&2
 		echo "  --reduce reduce program" >&2
 		echo "  --mirror assume the input data is mirrored on each node" >&2
 		echo "  --input  input directory; to use a file, redirect stdin" >&2
@@ -29,7 +29,7 @@ usage() {
 # Defaults
 hosts=
 column=1
-map=cat
+map=
 reduce=
 mirror=false
 input=
