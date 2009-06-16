@@ -44,9 +44,9 @@ set -- $(getopt --unquoted --name $program --options "h:c:m:r:Mi:o:t:S:" \
 	"hosts:,column:,map:,reduce:,mirror,input:,output:,tmp:,help" \
 	-- "$@") \
 	|| usage $program
-[ $# -eq 0 ] && usage $program
+[[ $# -eq 0 ]] && usage $program
 last=
-while [ $# -gt 0 ] ; do
+while [[ $# -gt 0 ]] ; do
 	case "$1" in
 		-h|--hosts) last=h; hosts=$2; shift 2;;
 		-c|--column) last=c; column=$2; shift 2;;
@@ -59,15 +59,15 @@ while [ $# -gt 0 ] ; do
 		-S) last=S; sort_mem=$2; shift 2;;
 		--help) usage $program MOAR;;
 		--) unset last; shift;;
-		*) if [ "$last" == h ]; then hosts="$hosts $1"; shift;
+		*) if [[ "$last" == h ]]; then hosts="$hosts $1"; shift;
 			else usage $program; fi;;
 	esac
 done 
 unset last
 
 # If --hosts wasn't given, try /etc/br.hosts
-if [ -z "$hosts" ]; then
-	if [ -e /etc/br.hosts ]; then
+if [[ -z "$hosts" ]]; then
+	if [[ -e /etc/br.hosts ]]; then
 		hosts=$(cat /etc/br.hosts)
 	else
 		echo "$program: must specify --hosts or provide /etc/br.hosts"
@@ -78,43 +78,53 @@ fi
 # if we have a reduce, add the pipe explicitly
 [ -n "$reduce" ] && reduce="| $reduce 2>>/tmp/br_stderr"
 
-# okay let's get started!	first we need a name for our job
 jobid="$(uuidgen)"
 jobpath="$tmp/br_job_$jobid"
 nodepath="$tmp/br_node_$jobid"
 mkdir -p $jobpath/{in,out}
 
-# now, for each host, set up in and out fifos (and a netcat for each), and ssh to each host to set up workers listening on netcat
-
 port_in=8192
 port_out=$(($port_in + 1))
 host_idx=0
 out_files=
-
 for host in $hosts; do
-	# our named pipes
 	mkfifo $jobpath/{in,out}/$host_idx
-	# lets get the pid of our listener
-	ssh -n $host "mkdir -p $nodepath"
-	pid=$(ssh -n $host "nc -l -p $port_out >$nodepath/in_$host_idx 2>>/tmp/br_stderr </dev/null & jobs -l" | awk {'print $2'})
-	ssh -n $host "tail -s0.1 -f --pid=$pid $nodepath/in_$host_idx 2>>/tmp/br_stderr </dev/null | LC_ALL='$LC_ALL' sort -S$sort_mem -T$tmp -k$column,$column 2>>/tmp/br_stderr $reduce | nc -q0 -l -p $port_in >>/tmp/br_stderr &"
-	# our local forwarders
+
+	# Listen for work (remote)
+	ssh -n $host "mkdir -p $nodepath/"
+	pid=$(ssh -n $host "nc -l -p $port_out >$nodepath/$host_idx \
+		2>>/tmp/br_stderr </dev/null & jobs -l" \
+		| awk {'print $2'})
+
+	# Do work (remote)
+	ssh -n $host "tail -s0.1 -f --pid=$pid $nodepath/$host_idx \
+		2>>/tmp/br_stderr </dev/null \
+		| LC_ALL='$LC_ALL' sort -S$sort_mem -T$tmp -k$column,$column \
+		2>>/tmp/br_stderr \
+		$map $reduce \
+		| nc -q0 -l -p $port_in >>/tmp/br_stderr &"
+
+	# Send work (local)
 	nc $host $port_in >$jobpath/in/$host_idx &
+
+	# Receive results (local)
 	nc -q0 $host $port_out <$jobpath/out/$host_idx &
-	# our vars
 	out_files="$out_files $jobpath/out/$host_idx"
+
+	# ++i
 	port_in=$(($port_in + 2))
 	port_out=$(($port_in + 1))
 	host_idx=$(($host_idx + 1))
+
 done
 
-# okay, time to map
+# Partition local input to the remote workers
 if which brp >>/tmp/br_stderr; then
 	BRP=brp
-elif [ -f brutils/brp >>/tmp/br_stderr ]; then
+elif [[ -f brutils/brp ]]; then
 	BRP=brutils/brp
 fi
-if [ -n "$BRP" ]; then
+if [[ -n "$BRP" ]]; then
 	eval "${input:+pv $input |} $BRP - $(($column - 1)) $out_files"
 else
 	# use awk if we don't have brp
@@ -131,13 +141,14 @@ else
 		}'"
 fi
 
-# save it somewhere
+# TODO: Merge output from hosts into one (maybe but not necessarily just
+# a re-reduce)
 if which brm >>/tmp/br_stderr; then
 	BRM=brm
-elif [ -f brutils/brm >>/tmp/br_stderr ]; then
+elif [[ -f brutils/brm ]]; then
 	BRP=brutils/brm
 fi
-if [ -n "$BRM" ]; then
+if [[ -n "$BRM" ]]; then
 	eval "$BRM- $(($column - 1)) `find $jobpath/in/ -type p | xargs` ${output:+| pv >$output}"
 else
 	# use sort -m if we don't have brm
@@ -146,7 +157,7 @@ else
 	eval "sort -k$column,$column -m $jobpath/in/* ${output:+| pv >$output}"
 fi
 
-# finally, clean up after ourselves
+# Cleanup
 rm -rf $jobpath
 for host in $hosts; do
 	ssh $host "rm -rf $nodepath"
