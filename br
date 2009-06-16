@@ -75,8 +75,10 @@ if [[ -z "$hosts" ]]; then
 	fi
 fi
 
-# if we have a reduce, add the pipe explicitly
-[ -n "$reduce" ] && reduce="| $reduce 2>>/tmp/br_stderr"
+# Setup map and reduce as parts of a pipeline
+[[ -n "$map" ]] && map="| $map 2>>/tmp/br_stderr"
+[[ $mirror == true ]] && map="| xargs --verbose cat $map 2>>/tmp/br_stderr"
+[[ -n "$reduce" ]] && reduce="| $reduce 2>>/tmp/br_stderr"
 
 jobid="$(uuidgen)"
 jobpath="$tmp/br_job_$jobid"
