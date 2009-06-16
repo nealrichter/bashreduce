@@ -149,10 +149,10 @@ fi
 if which brm >>$tmp/br_stderr; then
 	BRM=brm
 elif [[ -f brutils/brm ]]; then
-	BRP=brutils/brm
+	BRM=brutils/brm
 fi
 if [[ -n "$BRM" ]]; then
-	eval "$BRM- $(($column - 1)) $(find $jobpath/in/ -type p | xargs) \
+	eval "$BRM - $(($column - 1)) $(find $jobpath/in/ -type p | xargs) \
 		${output:+| pv >$output}"
 else
 	# use sort -m if we don't have brm
