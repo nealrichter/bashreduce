@@ -60,7 +60,10 @@ while [[ $# -gt 0 ]] ; do
 		-t|--tmp) last=t; tmp=$2; shift 2;;
 		--help) usage $program MOAR;;
 		--) unset last; shift;;
-		*) if [[ "$last" == h ]]; then hosts="$hosts $1"; shift;
+		*)
+			if [[ "$last" == h ]]; then hosts="$hosts $1"; shift;
+			elif [[ "$last" == m ]]; then map="$map $1"; shift;
+			elif [[ "$last" == r ]]; then reduce="$reduce $1"; shift;
 			else usage $program; fi;;
 	esac
 done 
