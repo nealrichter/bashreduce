@@ -2,10 +2,11 @@ NAME
 	br - bashreduce, map/reduce in bash
 
 SYNOPSIS
-	br --hosts|-h '<host>[ <host>][...]' [--column|-c <column>]
-		[--map|-m <map>] [--reduce|-r <reduce>] [--mirror|-M]
-		[--input|-i <input>] [--output <output>]
-		[--tmp <tmp>] [-S <sort-mem-MB>] [--help]
+	br [-h|--hosts '<host>[ <host>][...]'] [-f|--filenames]
+		[-m|--map <map>] [-r|--reduce <reduce>]
+		[-i|--input <input>] [-o|--output <output>]
+		[-c|--column <column>] [-S <sort-mem-MB>]
+		[-t|--tmp <tmp>] [--help]
 
 DESCRIPTION
 	br implements a map/reduce framework that allows the map and reduce
@@ -22,51 +23,77 @@ INSTALLATION
 	use as a worker (even localhost, for now).
 
 OPTIONS
-	--hosts, -h
+	-h, --hosts
 		The list of hosts to be used, specified as a space-
 		delimited list.  Specifying the same host multiple
 		times is allowed and is useful for taking explicit
 		advantage of multiple cores.
 
-	--column, -c
-
-	--map, -m
-		The map program, which should expect data on stdin
-		and produce the intermediate data on stdout.  The
-		stderr from this program will be logged.
-
-	--reduce, -r
-		The reduce program, which should expect data on stdin
-		and produce the intermediate data on stdout.  The
-		stderr from this program will be logged.
-
-	--mirror, -M
+	-f, --filenames
 		Only pass filenames from the master to the workers,
 		under the assumption that they all have a mirror of
-		the data set.
+		the data set.  This is equivalent to prefixing your
+		map program with "xargs cat |".
 
-	--input, -i
+	-m, --map
+		The map program, which should expect initial data on
+		stdin and produce the intermediate data on stdout.
+		The stderr from this program will be logged.
+
+	-r, --reduce
+		The reduce program, which should expect intermediate
+		data on stdin and produce the final data on stdout.
+		The stderr from this program will be logged.
+
+	-i, --input
 		A file or directory to serve as input.  If it is a
 		file, this is equivalent to piping that file into
 		br.  If it is a directory, it is equivalent to
 		piping the names of every file in that directory
 		into br.
 
-	--output, -o
+	-o, --output
 		The local file where output will be stored.
 		Defaults to stdout.
 
-	--tmp, -t
-		The temporary directory for storing br files.  All of
-		these files will be prefixed with "br_" and will be
-		cleaned up upon successful exit.
+	-c, --column
+		The column used by sort to produce the final output.
+		Defaults to 1.
 
 	-S
 		This is directly the -S option from sort(1).  It defaults
 		to 256M.
 
+	-t, --tmp
+		The temporary directory for storing br files.  All of
+		these files will be prefixed with "br_" and, with the
+		exception of br_stderr, will be cleaned up upon
+		successful exit.  Defaults to /tmp.
+
 	--help
 		Shows a help message and details about the arguments.
+
+FILES
+	All of these files are in the tmp directory specified by the user,
+	which defaults to /tmp.
+
+	br_job_*
+		The master uses named pipes to move data (or filenames)
+		to the worker(s).  These pipes are stored here.  This
+		directory is removed at the end of the job.
+
+	br_node_*
+		Each node uses named pipes to buffer data.  These
+		are stored here and do not overlap, even if a
+		node is specified twice in the host list.  These
+		directories are removed at the end of the job.
+
+	br_stderr
+		This file is cleared at the beginning of each
+		job.  It records stderr from most commands run
+		by br.  This is currently a point of contention
+		between jobs.  This file is NOT removed at the
+		end of the job.
 
 VERSIONS
 	0.2
