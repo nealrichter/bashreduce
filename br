@@ -153,14 +153,20 @@ if which brm >>$tmp/br_stderr; then
 elif [[ -f brutils/brm ]]; then
 	BRM=brutils/brm
 fi
-if [[ -n "$BRM" ]]; then
-	eval "$BRM - $(($column - 1)) $(find $jobpath/in/ -type p | xargs) \
-		${output:+| pv >$output}"
+if [[ -n "$merge" ]]; then
+	eval "find $jobpath/in -type p | xargs cat \
+		| $merge 2>>$tmp/br_stderr ${output:+| pv >$output}"
 else
-	# use sort -m if we don't have brm
-	# sort -m creates tmp files if too many input files are specified
-	# brm doesn't do this
-	eval "sort -k$column,$column -m $jobpath/in/* ${output:+| pv >$output}"
+	if [[ -n "$BRM" ]]; then
+		eval "$BRM - $(($column - 1)) $(find $jobpath/in/ -type p | xargs) \
+			${output:+| pv >$output}"
+	else
+		# use sort -m if we don't have brm
+		# sort -m creates tmp files if too many input files are specified
+		# brm doesn't do this
+		eval "sort -k$column,$column -S$sort_mem -m $jobpath/in/* \
+			${output:+| pv >$output}"
+	fi
 fi
 
 # Cleanup
