@@ -71,7 +71,8 @@ cp /dev/null $tmp/br_stderr
 
 # Setup map and reduce as parts of a pipeline
 [[ -n "$map" ]] && map="| $map 2>>$tmp/br_stderr"
-[[ $filenames == true ]] && map="| xargs --verbose cat 2>>$tmp/br_stderr $map"
+[[ $filenames == true ]] && map="| xargs -n1 \
+	sh -c 'zcat \$0 2>/dev/null || cat \$0' 2>>$tmp/br_stderr $map"
 [[ -n "$reduce" ]] && reduce="| $reduce 2>>$tmp/br_stderr"
 
 jobid="$(uuidgen)"
