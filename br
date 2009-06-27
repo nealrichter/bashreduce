@@ -121,7 +121,8 @@ if [[ -d "$input" ]]; then
 	[[ $filenames == false ]] && input="$input xargs -n1 \
 		sh -c 'zcat \$0 2>>$tmp/br_stderr || cat \$0 2>>$tmp/br_stderr' |"
 elif [[ -f "$input" ]]; then
-	input="pv $input |"
+	input="sh -c 'zcat $input 2>>$tmp/br_stderr \
+		|| cat $input 2>>$tmp/br_stderr' |"
 else
 	input=
 fi
