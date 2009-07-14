@@ -3,7 +3,7 @@
 # erik@fawx.com
 
 usage() {
-	echo "Usage: $1 [-h '<host>[ <host>][...]'] [-f]" >&2
+	echo "Usage: $1 [-h '<host>[ <host>][...]'] [-d] [-f]" >&2
 	echo "       [-m <map>] [-r <reduce>] [-M <merge>]" >&2
 	echo "       [-i <input>] [-o <output>] [-c <column>]" \
 		"[-S <sort-mem-MB>]" >&2
@@ -11,6 +11,8 @@ usage() {
 	if [ -n "$2" ] ; then
 		echo "  -h hosts to use; repeat hosts for multiple cores" >&2
 		echo "     (defaults to contents of /etc/br.hosts)" >&2
+		echo "  -d get the hosts from the extended attributes," >&2
+		echo "     if the input file is stored on DDGfs" >&2
 		echo "  -f send filenames, not data, over the network," >&2
 		echo "     implies each host has a mirror of the dataset" >&2
 		echo "  -m map program (effectively defaults to cat)" >&2
@@ -26,8 +28,28 @@ usage() {
 	exit 2
 }
 
+ddgHostnames() {
+	FILENAME=$1
+	replicationGroup=$(getfattr --only-values -n ddg.replicationGroup $FILENAME 2> /dev/null)
+	if [ -n "$replicationGroup" ] ; then
+		csvWC=$(echo $replicationGroup | sed 's/,/ /g' | wc -w)
+		replicasCount=$((($csvWC - 4)/3))
+		hosts=""
+		for i in $(seq $replicasCount); do
+			replica=$((3 + 3*$i))
+			hosts="$hosts $(echo $replicationGroup | cut -d, -f $replica)"
+		done
+		echo $hosts
+	else
+		# is not a ddg file
+		echo ""
+	fi
+}
+
+
 # Defaults
 hosts=
+ddg=false
 filenames=false
 map=
 reduce=
@@ -39,9 +61,13 @@ sort_mem=256M
 tmp=/tmp
 
 program=$(basename $0)
-while getopts "h:fm:r:M:i:o:c:S:t:?" name; do
+while getopts "h:dfm:r:M:i:o:c:S:t:?" name; do
 	case "$name" in
 		h) hosts=$OPTARG;;
+		d)
+			ddg=true
+			filenames=true
+		;;
 		f) filenames=true;;
 		m) map=$OPTARG;;
 		r) reduce=$OPTARG;;
@@ -51,10 +77,15 @@ while getopts "h:fm:r:M:i:o:c:S:t:?" name; do
 		c) column=$OPTARG;;
 		S) sort_mem=$OPTARG;;
 		t) tmp=$OPTARG;;
-		?) usage $program MOAR;;
+		?) usage $program HELP;;
 		*) usage $program;;
 	esac
-done 
+done
+
+# If -h wasn't given, try DDGfs extended attributes
+if [[ -z "$hosts" && -f "$input" && $ddg == true ]] ; then
+	hosts=$(ddgHostnames $input)
+fi
 
 # If -h wasn't given, try /etc/br.hosts
 if [[ -z "$hosts" ]]; then
@@ -150,8 +181,7 @@ else
 		}'"
 fi
 
-# TODO: Merge output from hosts into one (maybe but not necessarily just
-# a re-reduce)
+# TODO: Merge output from hosts into one (maybe but not necessarily just a re-reduce)
 if which brm >>$tmp/br_stderr; then
 	BRM=brm
 elif [[ -f brutils/brm ]]; then
