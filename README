@@ -2,7 +2,7 @@ NAME
 	br - bashreduce, map/reduce in bash
 
 SYNOPSIS
-	br [-h '<host>[ <host>][...]'] [-f]
+	br [-h '<host>[ <host>][...]'] [-d] [-f]
 		[-m <map>] [-r <reduce>] [-M <merge>]
 		[-i <input>] [-o <output>] [-c <column>] [-S <sort-mem-MB>]
 		[-t <tmp>] [-?]
