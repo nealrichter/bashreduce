@@ -30,20 +30,14 @@ usage() {
 
 ddgHostnames() {
 	FILENAME=$1
-	replicationGroup=$(getfattr --only-values -n ddg.replicationGroup $FILENAME 2> /dev/null)
-	if [ -n "$replicationGroup" ] ; then
-		csvWC=$(echo $replicationGroup | sed 's/,/ /g' | wc -w)
-		replicasCount=$((($csvWC - 4)/3))
-		hosts=""
-		for i in $(seq $replicasCount); do
-			replica=$((3 + 3*$i))
-			hosts="$hosts $(echo $replicationGroup | cut -d, -f $replica)"
-		done
-		echo $hosts
-	else
-		# is not a ddg file
-		echo ""
-	fi
+	hosts=""
+	for input in `cat $FILENAME` ; do
+		replicationGroup=$(getfattr --only-values -n ddg.replicationGroup $input 2> /dev/null)
+		if [ -n "$replicationGroup" ] ; then
+			hosts="$hosts $(echo $replicationGroup | cut -d, -f6)"
+		fi
+	done
+	echo $hosts
 }
 
 

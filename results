@@ -1,0 +1,12 @@
+- NFS (bashreduce):
+  command: time ./br -h "mandarim tarpon pepino nuvem" -m "awk '{print \$2}' | sort" -r "uniq -c" -f -i /home/jonhnny/input > nfs.output
+real	4m37.215s
+user	0m0.400s
+sys	0m0.330s
+
+- DDG (bashreduce):
+  command: time ./br -d -m "awk '{print \$2}' | sort" -r "uniq -c" -i /home/jonhnny/input > ddg.output
+real	3m9.884s
+user	0m0.390s
+sys	0m0.380s
+
