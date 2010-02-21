@@ -11,8 +11,8 @@ usage() {
 	if [ -n "$2" ] ; then
 		echo "  -h hosts to use; repeat hosts for multiple cores" >&2
 		echo "     (defaults to contents of /etc/br.hosts)" >&2
-		echo "  -d get the hosts from the extended attributes," >&2
-		echo "     if the input file is stored on DDGfs" >&2
+		echo "  -X get the hosts from the eXtended attributes," >&2
+		echo "     if the input file is stored on BeeFS " >&2
 		echo "  -f send filenames, not data, over the network," >&2
 		echo "     implies each host has a mirror of the dataset" >&2
 		echo "  -m map program (effectively defaults to cat)" >&2
@@ -28,11 +28,11 @@ usage() {
 	exit 2
 }
 
-ddgHostnames() {
+hostnames() {
 	FILENAME=$1
 	hosts=""
 	for input in `cat $FILENAME` ; do
-		replicationGroup=$(getfattr --only-values -n ddg.replicationGroup $input 2> /dev/null)
+		replicationGroup=$(getfattr --only-values -n beefs.replicationGroup $input 2> /dev/null)
 		if [ -n "$replicationGroup" ] ; then
 			hosts="$hosts $(echo $replicationGroup | cut -d, -f6)"
 		fi
@@ -43,7 +43,7 @@ ddgHostnames() {
 
 # Defaults
 hosts=
-ddg=false
+xattr=false
 filenames=false
 map=
 reduce=
@@ -55,11 +55,11 @@ sort_mem=256M
 tmp=/tmp
 
 program=$(basename $0)
-while getopts "h:dfm:r:M:i:o:c:S:t:?" name; do
+while getopts "h:Xfm:r:M:i:o:c:S:t:?" name; do
 	case "$name" in
 		h) hosts=$OPTARG;;
-		d)
-			ddg=true
+		X)
+			xattr=true
 			filenames=true
 		;;
 		f) filenames=true;;
@@ -76,9 +76,9 @@ while getopts "h:dfm:r:M:i:o:c:S:t:?" name; do
 	esac
 done
 
-# If -h wasn't given, try DDGfs extended attributes
-if [[ -z "$hosts" && -f "$input" && $ddg == true ]] ; then
-	hosts=$(ddgHostnames $input)
+# If -h wasn't given, try BeeFS extended attributes
+if [[ -z "$hosts" && -f "$input" && $xattr == true ]] ; then
+	hosts=$(hostnames $input)
 fi
 
 # If -h wasn't given, try /etc/br.hosts
