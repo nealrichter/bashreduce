@@ -2,7 +2,7 @@ NAME
 	br - bashreduce, map/reduce in bash
 
 SYNOPSIS
-	br [-h '<host>[ <host>][...]'] [-d] [-f]
+	br [-h '<host>[ <host>][...]'] [-b] [-f]
 		[-m <map>] [-r <reduce>] [-M <merge>]
 		[-i <input>] [-o <output>] [-c <column>] [-S <sort-mem-MB>]
 		[-t <tmp>] [-?]
@@ -27,9 +27,10 @@ OPTIONS
 		times is allowed and is useful for taking explicit
 		advantage of multiple cores.
 
-	-d	The list of hosts to be used is obtained from the
+	-b	The list of hosts to be used is obtained from the
 		input file's extended attributes, if the input file
-		is stored on DDGfs [2].
+		is stored on BeeFS [2].  This option automatically
+    enables the -f option. 
 
 	-f	Only pass filenames from the master to the workers,
 		under the assumption that they all have a mirror of
@@ -105,7 +106,7 @@ NOTES
 AUTHORS
 	Erik Frey <erik@fawx.com>
 	Richard Crowley <r@rcrowley.org>
-	Jonhnny Weslley <jonhnnyweslley@gmail.com>
+	Jonhnny Weslley <jw@jonhnnyweslley.net>
 
 SEE ALSO
 	<http://github.com/erikfrey/bashreduce>

@@ -3,7 +3,7 @@
 # erik@fawx.com
 
 usage() {
-	echo "Usage: $1 [-h '<host>[ <host>][...]'] [-d] [-f]" >&2
+	echo "Usage: $1 [-h '<host>[ <host>][...]'] [-b] [-f]" >&2
 	echo "       [-m <map>] [-r <reduce>] [-M <merge>]" >&2
 	echo "       [-i <input>] [-o <output>] [-c <column>]" \
 		"[-S <sort-mem-MB>]" >&2
@@ -11,8 +11,8 @@ usage() {
 	if [ -n "$2" ] ; then
 		echo "  -h hosts to use; repeat hosts for multiple cores" >&2
 		echo "     (defaults to contents of /etc/br.hosts)" >&2
-		echo "  -X get the hosts from the eXtended attributes," >&2
-		echo "     if the input file is stored on BeeFS " >&2
+		echo "  -b get the hosts from the extended attributes," >&2
+		echo "     if the input file is stored on BeeFS" >&2
 		echo "  -f send filenames, not data, over the network," >&2
 		echo "     implies each host has a mirror of the dataset" >&2
 		echo "  -m map program (effectively defaults to cat)" >&2
@@ -34,7 +34,7 @@ hostnames() {
 	for input in `cat $FILENAME` ; do
 		replicationGroup=$(getfattr --only-values -n beefs.replicationGroup $input 2> /dev/null)
 		if [ -n "$replicationGroup" ] ; then
-			hosts="$hosts $(echo $replicationGroup | cut -d, -f6)"
+			hosts="$hosts $(echo $replicationGroup | cut -d, -f5)"
 		fi
 	done
 	echo $hosts
@@ -55,10 +55,10 @@ sort_mem=256M
 tmp=/tmp
 
 program=$(basename $0)
-while getopts "h:Xfm:r:M:i:o:c:S:t:?" name; do
+while getopts "h:bfm:r:M:i:o:c:S:t:?" name; do
 	case "$name" in
 		h) hosts=$OPTARG;;
-		X)
+		b)
 			xattr=true
 			filenames=true
 		;;
@@ -99,6 +99,7 @@ cp /dev/null $tmp/br_stderr
 [[ $filenames == true ]] && map="| xargs -n1 \
 	sh -c 'zcat \$0 2>>$tmp/br_stderr || cat \$0 2>>$tmp/br_stderr' $map"
 [[ -n "$reduce" ]] && reduce="| $reduce 2>>$tmp/br_stderr"
+
 
 jobid="$(uuidgen)"
 jobpath="$tmp/br_job_$jobid"
@@ -158,21 +159,31 @@ if which brp >>$tmp/br_stderr; then
 elif [[ -f brutils/brp ]]; then
 	BRP=brutils/brp
 fi
-if [[ -n "$BRP" ]]; then
-	eval "$input $BRP - $(($column - 1)) $out_files"
+if [[ $xattr == true ]]; then
+  # whereas the number of slaves is greater than the number of files, then:
+  x=0
+  for filename in `eval "$input cat"` ; do
+    echo $filename > "$jobpath/out/$x"
+    x=$((x+1))
+  done
+  # TODO: but, if the number of slaves is NOT greater than the number of files?
 else
-	# use awk if we don't have brp
-	# we're taking advantage of a special property that awk leaves its file handles open until its done
-	# i think this is universal
-	# we're also sending a zero length string to all the handles at the end, in case some pipe got no love
-	eval "$input awk '{
-			srand(\$$column);
-			print \$0 >>\"$jobpath/out/\"int(rand() * $host_idx);
-		}
-		END {
-			for (i = 0; i != $host_idx; ++i)
-				printf \"\" >>\"$jobpath/out/\"i;
-		}'"
+  if [[ -n "$BRP" ]]; then
+	  eval "$input $BRP - $(($column - 1)) $out_files"
+  else
+	  # use awk if we don't have brp
+  	# we're taking advantage of a special property that awk leaves its file handles open until its done
+  	# i think this is universal
+	  # we're also sending a zero length string to all the handles at the end, in case some pipe got no love
+    eval "$input awk '{
+		    srand(\$$column);
+	  		print \$0 >>\"$jobpath/out/\"int(rand() * $host_idx);
+	  	}
+		  END {
+			  for (i = 0; i != $host_idx; ++i)
+				  printf \"\" >>\"$jobpath/out/\"i;
+  		}'"
+  fi
 fi
 
 # TODO: Merge output from hosts into one (maybe but not necessarily just a re-reduce)
