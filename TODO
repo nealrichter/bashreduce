@@ -1,0 +1,17 @@
+Suggestions:
+
+ - auto-detect version of netcat?
+    - nc.traditional -h
+    - nc.openbsd -h
+
+- pipe stderr from mappers and reducers to
+    - br_stderr_reducer_$RANDOM
+    - br_stderr_mapper_$RANDOM
+
+- Allow hadoop streaming utilization of stderr counters?
+    - reporter:counter:<group>,<counter>,<amount> should be sent to stderr to update the counter.
+    - then send all of these through sort | reducer to sum the counters
+
+- Universal cat command
+    - added a C implementation that can automatically handle txt,gzip,bzip2,lzma etc
+    - probably easy to write a shell script as well
