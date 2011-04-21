@@ -53,6 +53,9 @@ output=
 column=1
 sort_mem=256M
 tmp=/tmp
+#TODO - autodetect the version of netcat?
+nc=nc.traditional
+
 
 program=$(basename $0)
 while getopts "h:bfm:r:M:i:o:c:S:t:?" name; do
@@ -92,13 +95,14 @@ if [[ -z "$hosts" ]]; then
 fi
 
 # Start br_stderr from a clean slate
-cp /dev/null $tmp/br_stderr
+rm $tmp/br_stderr*
+#cp /dev/null $tmp/br_stderr
 
 # Setup map and reduce as parts of a pipeline
-[[ -n "$map" ]] && map="| $map 2>>$tmp/br_stderr"
+[[ -n "$map" ]] && map="| $map 2>>$tmp/br_stderr_mapper_\$RANDOM"
 [[ $filenames == true ]] && map="| xargs -n1 \
 	sh -c 'zcat \$0 2>>$tmp/br_stderr || cat \$0 2>>$tmp/br_stderr' $map"
-[[ -n "$reduce" ]] && reduce="| $reduce 2>>$tmp/br_stderr"
+[[ -n "$reduce" ]] && reduce="| $reduce 2>>$tmp/br_stderr_reducer_\$RANDOM"
 
 
 jobid="$(uuidgen)"
@@ -115,7 +119,7 @@ for host in $hosts; do
 
 	# Listen for work (remote)
 	ssh -n $host "mkdir -p $nodepath/"
-	pid=$(ssh -n $host "nc -l -p $port_out >$nodepath/$host_idx \
+	pid=$(ssh -n $host "$nc -l -p $port_out >$nodepath/$host_idx \
 		2>>$tmp/br_stderr </dev/null & jobs -l" \
 		| awk {'print $2'})
 
@@ -125,13 +129,13 @@ for host in $hosts; do
 		| LC_ALL='$LC_ALL' sort -S$sort_mem -T$tmp -k$column,$column \
 		2>>$tmp/br_stderr \
 		$map $reduce \
-		| nc -q0 -l -p $port_in >>$tmp/br_stderr &"
+		| $nc -q0 -l -p $port_in >>$tmp/br_stderr &"
 
 	# Send work (local)
-	nc $host $port_in >$jobpath/in/$host_idx &
+	$nc $host $port_in >$jobpath/in/$host_idx &
 
 	# Receive results (local)
-	nc -q0 $host $port_out <$jobpath/out/$host_idx &
+	$nc -q0 $host $port_out <$jobpath/out/$host_idx &
 	out_files="$out_files $jobpath/out/$host_idx"
 
 	# ++i
