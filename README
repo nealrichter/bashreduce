@@ -94,6 +94,16 @@ FILES
 		between jobs.  This file is NOT removed at the
 		end of the job.
 
+   br_stderr_mapper_$RANDOM
+        One file is created for each fork() of a mapper.  It 
+        contains all stderr from that mapper.  Usefull for counters 
+        in map algorithms.
+
+   br_stderr_reducer_$RANDOM
+        One file is created for each fork() of a reducer.  It 
+        contains all stderr from that reducer.  Usefull for counters 
+        in reduce algorithms.
+
 NOTES
 	[1]	Because you can specify a pipeline for any or all of the map,
 		reduce and merge steps, br can only reliably log stderr from
@@ -102,6 +112,8 @@ NOTES
 	[2]	The extended attributes are obtained via getfattr tool.
 		If you don't have getfattr installed yet, do:
 		$> sudo apt-get install attr
+
+    [3] The traditional version of netcat (nc) MUST be used.
 
 AUTHORS
 	Erik Frey <erik@fawx.com>
