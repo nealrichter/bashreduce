@@ -94,15 +94,15 @@ FILES
 		between jobs.  This file is NOT removed at the
 		end of the job.
 
-   br_stderr_mapper_$RANDOM
-        One file is created for each fork() of a mapper.  It 
-        contains all stderr from that mapper.  Usefull for counters 
-        in map algorithms.
+	br_stderr_mapper_$RANDOM
+		One file is created for each fork() of a mapper.  It 
+		contains all stderr from that mapper.  Usefull for counters 
+		in map algorithms.
 
-   br_stderr_reducer_$RANDOM
-        One file is created for each fork() of a reducer.  It 
-        contains all stderr from that reducer.  Usefull for counters 
-        in reduce algorithms.
+	br_stderr_reducer_$RANDOM
+ 		One file is created for each fork() of a reducer.  It 
+ 		contains all stderr from that reducer.  Usefull for counters 
+ 		in reduce algorithms.
 
 NOTES
 	[1]	Because you can specify a pipeline for any or all of the map,
