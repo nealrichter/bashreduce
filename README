@@ -113,7 +113,7 @@ NOTES
 		If you don't have getfattr installed yet, do:
 		$> sudo apt-get install attr
 
-    [3] The traditional version of netcat (nc) MUST be used.
+ 	[3] The traditional version of netcat (nc) MUST be used.
 
 AUTHORS
 	Erik Frey <erik@fawx.com>
